@@ -1,0 +1,204 @@
+/**
+  @page FWupgrade_Standalone USB Host Firmware Upgrade example
+  
+  @verbatim
+  ******************** (C) COPYRIGHT 2014 STMicroelectronics *******************
+  * @file    USB_Host/FWupgrade_Standalone/readme.txt 
+  * @author  MCD Application Team
+  * @version V1.1.0
+  * @date    26-June-2014
+  * @brief   Description of the USB Host Firmware Upgrade example
+  ******************************************************************************
+  *
+  * Licensed under MCD-ST Liberty SW License Agreement V2, (the "License");
+  * You may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at:
+  *
+  *        http://www.st.com/software_license_agreement_liberty_v2
+  *
+  * Unless required by applicable law or agreed to in writing, software 
+  * distributed under the License is distributed on an "AS IS" BASIS, 
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  ******************************************************************************
+  @endverbatim
+
+@par Example Description 
+
+This example is a part of the USB Host Library package using STM32Cube firmware. It describes how to use
+USB host application based on the In-Application programming (IAP) on the STM32F4xx devices.
+
+This is a typical example on how to use the STM32F4xx USB OTG Host peripheral for firmware upgrade 
+application or IAP, allowing user to erase and write to on-chip flash memory.
+
+At the beginning of the main program the HAL_Init() function is called to reset all the peripherals,
+initialize the Flash interface and the systick. The user is provided with the SystemClock_Config()
+function to configure the system clock (SYSCLK) to run at 168 MHz. The Full Speed (FS) USB module uses
+internally a 48-MHz clock, which is generated from an integrated PLL. In the High Speed (HS) mode the
+USB clock (60 MHz) is driven by the ULPI.
+
+It's worth noting that the system clock (SYSCLK) can be configured, depending on the used USB Core:
+ - SYSCLK is set to 168 MHz: for FS Core (FS or HS-IN-FS), because used embedded PHY
+                             requires 48 MHz clock, achieved only when system clock
+                             is set to 168 MHz.
+ - SYSCLK is set to 180 MHz: for only HS Core, since no embedded PHY is used.
+
+This example uses the USB Host to:
+ - DOWNLOAD: Reads the defined image (.bin) file “DOWNLOAD_FILENAME” from the thumb drive and writes it
+             to the embedded Flash memory.
+ - UPLOAD:   Reads the entire embedded Flash memory and saves the contents to the defined file name 
+             “UPLOAD_FILENAME” in the thumb drive.
+ - JUMP:     Executes the user code at the defined user application start address “APPLICATION_ADDRESS”.
+             Image which must be defined from this flash address: 0x0800C000
+  
+@note Care must be taken when using HAL_Delay(), this function provides accurate delay (in milliseconds)
+      based on variable incremented in SysTick ISR. This implies that if HAL_Delay() is called from
+      a peripheral ISR process, then the SysTick interrupt must have higher priority (numerically lower)
+      than the peripheral interrupt. Otherwise the caller ISR process will be blocked.
+      To change the SysTick interrupt priority you have to use HAL_NVIC_SetPriority() function.
+      
+@note The application needs to ensure that the SysTick time base is always set to 1 millisecond
+      to have correct HAL operation.
+
+For more details about the STM32Cube USB Host library, please refer to UM1720  
+"STM32Cube USB Host library".
+
+
+@par USB Library Configuration
+
+To select the appropriate USB Core to work with, user must add the following macro defines within the
+compiler preprocessor (already done in the preconfigured projects provided with this example):
+      - "USE_USB_HS" when using USB High Speed (HS) Core
+      - "USE_USB_FS" when using USB Full Speed (FS) Core 
+      - "USE_USB_HS" and "USE_USB_HS_IN_FS" when using USB High Speed (HS) Core in FS mode
+
+The user application (binary file) to be loaded into the Flash memory using the firmware upgrade 
+application is built by the following configuration settings:
+	- Set the program load address to APPLICATION_ADDRESS in the toolchain linker file.
+	- Relocate the vector table to address APPLICATION_ADDRESS using the the VECT_TAB_OFFSET definition  
+	  inside the system_stm32f4xx.c file.
+
+
+@par Directory contents 
+
+  - USB_Host/FWupgrade_Standalone/Src/main.c                  Main program
+  - USB_Host/FWupgrade_Standalone/Src/system_stm32f4xx.c      STM32F4xx system clock configuration file
+  - USB_Host/FWupgrade_Standalone/Src/stm32f4xx_it.c          Interrupt handlers
+  - USB_Host/FWupgrade_Standalone/Src/iap_menu.c              IAP State Machine   
+  - USB_Host/FWupgrade_Standalone/Src/usbh_conf.c             General low level driver configuration
+  - USB_Host/FWupgrade_Standalone/Src/command.c               IAP command functions
+  - USB_Host/FWupgrade_Standalone/Src/flash_if.c              Flash layer functions
+  - USB_Host/FWupgrade_Standalone/Src/usbh_diskio.c           USB diskio interface for FatFs
+  - USB_Host/FWupgrade_Standalone/Inc/main.h                  Main program header file
+  - USB_Host/FWupgrade_Standalone/Inc/stm32f4xx_it.h          Interrupt handlers header file
+  - USB_Host/FWupgrade_Standalone/Inc/command.h               IAP command functions header file
+  - USB_Host/FWupgrade_Standalone/Inc/flash_if.h              Flash layer functions header file
+  - USB_Host/FWupgrade_Standalone/Inc/stm32f4xx_hal_conf.h    HAL configuration file
+  - USB_Host/FWupgrade_Standalone/Inc/usbh_conf.h             USB Host driver Configuration file
+  - USB_Host/FWupgrade_Standalone/Inc/ffconf.h                FatFs Module Configuration file
+  
+  - USB_Host/FWupgrade_Standalone/Binary/
+    This folder contains images that can be loaded and executed by the FW upgrade application:
+    - STM324x9I_EVAL_SysTick.bin
+    - STM324x9I_EVAL_USBH_MSC_FS.bin
+    - STM324x9I_EVAL_USBH_MSC_HS.bin
+    
+
+@par Hardware and Software environment
+
+  - This example runs on STM32F429xx/STM32F439xx devices.
+    
+  - This example has been tested with STMicroelectronics STM324x9I-EVAL RevB 
+    evaluation boards and can be easily tailored to any other supported device 
+    and development board.
+
+  - STM324x9I-EVAL RevB Set-up
+    - Plug the USB key into the STM324x9I-EVAL board through 'USB micro A-Male 
+      to A-Female' cable to the connector:
+      - CN9 : to use USB High Speed (HS) 
+      - CN14: to use USB Full Speed (FS) with embedded PHY(U7)
+              Please ensure that jumper JP16 is not fitted.
+      - CN15: to use USB HS-IN-FS.
+              Note that some FS signals are shared with the HS ULPI bus, so some PCB rework is needed.
+              For more details, refer to section 2.8 USB OTG2 HS & FS in UM1667    
+
+
+@par How to use it ? 
+
+In order to make the program work, you must do the following :
+ - Open your preferred toolchain 
+ - Rebuild all files and load your image into target memory
+ - In the workspace toolbar select the project configuration:
+   - STM324x9I-EVAL_USBH-HS: to configure the project for STM32F4xx devices using USB OTG HS peripheral
+   - STM324x9I-EVAL_USBH-FS: to configure the project for STM32F4xx devices using USB OTG FS peripheral
+   - STM324x9I-EVAL_USBH-HS-IN-FS: to configure the project for STM32F4xx devices and use USB OTG HS 
+                                   peripheral In FS (using embedded PHY).
+ - To run the example, proceed as follows:
+
+1. Load the binary image of the user program to the root directory of a USB key. You can use the 
+   provided binary images under the USB_Host\FWupgrade_Standalone\Binary folder. 
+   The binary should be renamed to “image.bin”.
+
+2. Program the firmware upgrade application into the internal Flash memory.
+   a. Open the project (under USB_Host\FWupgrade_Standalone) with your preferred toolchain.
+   b. Compile and load the project into the target memory and run the project.
+
+After the board reset and depending on the Key button state:
+   1. Key button pressed: The firmware upgrade application is executed.
+   2. Key button not pressed: A test on the user application start address will be performed and one of
+      the below processes is executed:
+      – User vector table available: User application is executed.
+      – User vector table not available: firmware upgrade application is executed.
+
+During the firmware upgrade application execution, there is a continuous check on the Key button pressed
+state time. Depending on the state time of the Key button, one of the following processes is executed:
+ - If Key Button is pressed for more than > 3 seconds at firmware startup:
+   UPLOAD command will be executed immediately after completed execution of the DOWNLOAD command
+ - If Key Button is pressed for less than< 3 seconds at firmware startup:
+   Only the DOWNLOAD command is executed.
+
+STM32 Eval board's LEDs can be used to monitor the example status:
+ - Red LED blinks in infinite loop 
+	 –> Error: USB key disconnected.
+
+ - Red LED blinks in infinite loop and Orange/Blue LEDs are ON 
+	 –> Error: Flash programming error.
+	
+ - Red LED blinks in infinite loop and Green LED is ON 
+	 –> Error: Download done and USB key disconnected.
+
+ - Red LED blinks in infinite loop and Blue/Orange/Green LEDs are ON
+	 –> Error: Binary file not available
+
+ - Red/Blue/Orange LEDs blink in infinite loop
+	 –> Error: Buffer size limit, Exceed 32Kbyte
+	
+ - Red LED blinks in infinite loop and Blue LED is ON
+	 –> Error: No available Flash memory size to load the binary file.
+	
+ - Red/Orange LEDs blink in infinite loop
+	 –> Error: Flash erase error.
+
+ - Red/Blue LEDs are ON
+	 –> UPLOAD condition verified and the user should release the Key button.
+	
+ - Blue LED is ON
+	 –> DOWNLOAD ongoing.
+	
+ - Orange/Red LEDs are ON
+	 –> DOWNLOAD done and UPLOAD is ongoing.
+
+ - Orange/Blue LEDs are ON
+	 –> UPLOAD is ongoing.
+	
+ - Red LED blinks in infinite loop and Orange LED is ON
+	 –> USB key read out protection ON.
+	
+ - Green LED is ON
+	 –> DOWNLOAD and UPLOAD done with success; and the MCU waiting until you press the Key button before
+      executing the JUMP command.
+  
+ * <h3><center>&copy; COPYRIGHT STMicroelectronics</center></h3>
+ */
